@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: isse-bot
+    runtime: docker
+    dockerfilePath: ./Dockerfile.bot
+    envVars:
+      - key: WEBHOOK_URL
+        value: https://isse-bot.onrender.com
+      - key: ISSE_BASE_URL
+        value: https://isse-certificados.onrender.com
+      - key: ISSE_BOT_TOKEN
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: PORT
+        value: "10000"

@@ -1,0 +1,25 @@
+# flyctl launch added from .gitignore
+# Secrets & credentials — NEVER commit
+**\credentials.json
+**\*.env
+**\.env*
+**\secrets.*
+
+# Logs & runtime
+**\*.log
+**\*.lock
+**\err.txt
+**\bot_err.log
+**\improvement_log.jsonl
+
+# Backups
+**\*.bak
+
+# Python cache
+**\__pycache__
+**\*.pyc
+**\*.pyo
+
+# Claude local config
+**\.claude\settings.local.json
+fly.toml

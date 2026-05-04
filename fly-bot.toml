@@ -1,0 +1,15 @@
+# fly.toml app configuration file for isse-bot (polling mode)
+app = 'isse-bot'
+primary_region = 'gru'
+
+[build]
+  dockerfile = 'Dockerfile.bot'
+
+[env]
+  PORT = '8443'
+  # No WEBHOOK_URL → bot uses polling mode
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
