@@ -41,7 +41,7 @@ from isse_tools import (
 TOKEN = os.environ.get("ISSE_BOT_TOKEN", "")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 MODEL = "openai/gpt-4o-mini"
-ISSE_BASE_URL = os.environ.get("ISSE_BASE_URL", "https://isse-certificados.fly.dev")
+ISSE_BASE_URL = os.environ.get("ISSE_BASE_URL", "https://isse-certificados.onrender.com")
 
 # ── OpenRouter client (same as Adam) ─────────────────────────────────────────
 client = OpenAI(
