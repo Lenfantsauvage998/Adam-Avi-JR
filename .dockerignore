@@ -1,25 +1,35 @@
-# flyctl launch added from .gitignore
 # Secrets & credentials — NEVER commit
-**\credentials.json
-**\*.env
-**\.env*
-**\secrets.*
+credentials.json
+*.env
+.env*
+secrets.*
+
+# Large files not needed by bot
+tools.py
+tools.py.bak
+main.py
+main.py.bak
+call.py
+launcher.py
+install_service.ps1
+install_task.ps1
+fly-bot.toml
 
 # Logs & runtime
-**\*.log
-**\*.lock
-**\err.txt
-**\bot_err.log
-**\improvement_log.jsonl
+*.log
+*.lock
+err.txt
+bot_err.log
+improvement_log.jsonl
 
 # Backups
-**\*.bak
+*.bak
 
 # Python cache
-**\__pycache__
-**\*.pyc
-**\*.pyo
+__pycache__/
+*.pyc
+*.pyo
 
-# Claude local config
-**\.claude\settings.local.json
-fly.toml
+# Render / Claude local
+render.yaml
+.claude/
