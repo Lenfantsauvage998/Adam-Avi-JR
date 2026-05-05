@@ -104,7 +104,7 @@ ISSE_TOOLS = [
                         "items": {"type": "string"},
                         "description": "Lista de ciclos EXACTOS a filtrar. Usa los nombres exactos de isse_get_ciclos. Para un rango pasa TODOS: ej. ['PERIODO 2023-1', 'PERIODO 2023-2', 'PERIODO 2024-1']. Omitir = todos los períodos.",
                     },
-                    "fmt": {"type": "string", "enum": ["excel", "csv", "word"], "description": "Formato: 'excel' (default), 'csv', o 'word' (certificado oficial con plantilla .docx)"},
+                    "fmt": {"type": "string", "enum": ["excel", "csv", "word"], "description": "Formato: 'excel' (default), 'csv', o 'word' (certificación oficial con plantilla .docx de la Facultad)"},
                 },
                 "required": ["professor_name"],
             },
@@ -164,10 +164,10 @@ FLUJO ESTÁNDAR:
 2. Con el nombre exacto confirmado → llama isse_get_certificates con ese nombre EXACTO.
    IMPORTANTE: siempre usa el nombre TAL COMO lo devolvió isse_search_professor. Nunca lo acortes, reformules ni traduzcas.
 3. Si el usuario quiere el archivo → llama isse_export_certificate con el nombre EXACTO del profesor (igual al usado en isse_get_certificates). NO envíes send_telegram_file — el archivo se envía automáticamente.
-   - Si el usuario pide el "certificado oficial", "certificado Word" o "carta de certificación" → usa fmt='word' (genera el .docx con la plantilla oficial de la Facultad).
+   - Si el usuario pide la "certificación", "certificación oficial" o "carta de certificación" → usa fmt='word' (genera el .docx con la plantilla oficial de la Facultad).
    - Si el usuario pide Excel → usa fmt='excel' (default).
    - Si el usuario pide CSV → usa fmt='csv'.
-   - IMPORTANTE: después de enviar el archivo Excel (.xlsx), SIEMPRE pregunta al usuario: "¿También quieres el certificado oficial en Word (.docx) con la plantilla de la Facultad de Ingeniería?" Espera su respuesta antes de continuar.
+   - IMPORTANTE: después de enviar el archivo Excel (.xlsx), SIEMPRE pregunta al usuario: "¿También quieres la certificación oficial (.docx) con la plantilla de la Facultad de Ingeniería?" Espera su respuesta antes de continuar.
 4. Si el usuario quiere enviarlo por correo → isse_export_certificate con el nombre EXACTO + send_email con el archivo adjunto.
 
 NORMAS:
