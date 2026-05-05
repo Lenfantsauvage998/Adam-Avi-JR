@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import requests
 
-ISSE_BASE_URL = os.environ.get("ISSE_BASE_URL", "https://isse-certificados.fly.dev")
+ISSE_BASE_URL = os.environ.get("ISSE_BASE_URL", "https://proyecto-indes-challenge.onrender.com")
 
 
 def isse_get_ciclos() -> str:
