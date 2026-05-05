@@ -22,7 +22,7 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
@@ -42,7 +42,7 @@ MODEL = "openai/gpt-4o-mini"
 ISSE_BASE_URL = os.environ.get("ISSE_BASE_URL", "https://isse-certificados.onrender.com")
 
 # ── OpenRouter client (same as Adam) ─────────────────────────────────────────
-client = OpenAI(
+client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
 )
@@ -229,7 +229,7 @@ async def _export_and_send(update: Update, args: dict) -> str:
 # ── core tool-calling loop (simplified from Adam) ────────────────────────────
 async def run_tool_loop(messages: list, update: Update, max_iter: int = 10) -> str:
     for _ in range(max_iter):
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=MODEL,
             messages=messages,
             tools=ISSE_TOOLS,
