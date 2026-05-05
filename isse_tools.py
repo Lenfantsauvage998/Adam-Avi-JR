@@ -67,7 +67,7 @@ def isse_get_certificates(professor_id: str, ciclos: list = None) -> str:
 
 
 def isse_export_certificate(professor_name: str, ciclos: list = None, fmt: str = "excel") -> str:
-    """Returns raw bytes of the file (for in-memory Telegram send)."""
+    """Returns raw bytes of the file (for in-memory Telegram send). fmt: excel | csv | word"""
     try:
         params = {"profesor": professor_name, "format": fmt}
         if ciclos:
