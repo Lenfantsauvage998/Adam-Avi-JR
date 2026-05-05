@@ -340,10 +340,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
 
     try:
+        print(f"[MSG] user={user_id} text={text[:50]!r}")
         reply = await run_tool_loop(messages, update)
+        print(f"[REPLY] {reply[:100]!r}")
         if not reply:
             reply = "No obtuve respuesta del modelo. Intenta de nuevo."
     except Exception as exc:
+        import traceback
+        print(f"[ERROR] {traceback.format_exc()}")
         reply = f"Error interno: {exc}"
 
     history.append({"role": "assistant", "content": reply})
