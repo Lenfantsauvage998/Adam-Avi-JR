@@ -334,49 +334,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     history = get_history(user_id)
     history.append({"role": "user", "content": text})
 
-    # Keep history bounded
     if len(history) > 20:
         history[:] = history[-20:]
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
 
-    reply = await run_tool_loop(messages, update)
-    history.append({"role": "assistant", "content": reply})
+    try:
+        reply = await run_tool_loop(messages, update)
+        if not reply:
+            reply = "No obtuve respuesta del modelo. Intenta de nuevo."
+    except Exception as exc:
+        reply = f"Error interno: {exc}"
 
+    history.append({"role": "assistant", "content": reply})
     await safe_send(update, reply)
 
 
-# ── webhook + health server (aiohttp) ────────────────────────────────────────
-async def _run_webhook_with_health(ptb_app, webhook_url: str, port: int, token: str):
-    from aiohttp import web
+# ── health thread (keeps Render awake) ───────────────────────────────────────
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-    async def healthz(request):
-        return web.Response(text="ok", status=200)
+class _HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"ok")
+    def log_message(self, *args): pass
 
-    async def webhook_handler(request):
-        from telegram import Update as _Update
-        data = await request.json()
-        update = _Update.de_json(data, ptb_app.bot)
-        await ptb_app.update_queue.put(update)
-        return web.Response(text="ok", status=200)
 
-    web_app = web.Application()
-    web_app.router.add_get("/",        healthz)
-    web_app.router.add_get("/healthz", healthz)
-    web_app.router.add_post(f"/{token}", webhook_handler)
-
-    await ptb_app.bot.set_webhook(f"{webhook_url}/{token}")
-
-    runner = web.AppRunner(web_app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    print(f"ISSE Bot running (webhook + healthz) on port {port}")
-
-    async with ptb_app:
-        await ptb_app.start()
-        await asyncio.Event().wait()   # run forever
-        await ptb_app.stop()
+def _start_health_server(port: int):
+    server = HTTPServer(("0.0.0.0", port), _HealthHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    print(f"Health server on port {port}")
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -405,11 +394,11 @@ def main():
     webhook_url = os.environ.get("WEBHOOK_URL")
     port = int(os.environ.get("PORT", 10000))
 
-    if webhook_url:
-        asyncio.run(_run_webhook_with_health(ptb_app, webhook_url, port, TOKEN))
-    else:
-        print("ISSE Bot running (polling)...")
-        ptb_app.run_polling()
+    # Health server on the exposed port — keeps Render awake + lets UptimeRobot ping
+    _start_health_server(port)
+    # Polling mode — no webhook port conflict, works on any host
+    print("ISSE Bot running (polling)...")
+    ptb_app.run_polling()
 
 
 if __name__ == "__main__":
