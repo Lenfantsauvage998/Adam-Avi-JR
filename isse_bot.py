@@ -15,9 +15,7 @@ import os
 import sys
 import json
 import asyncio
-import threading
 import requests as _requests
-from http.server import HTTPServer, BaseHTTPRequestHandler
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -348,23 +346,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await safe_send(update, reply)
 
 
-# ── health check server for Fly.io (polling mode only) ───────────────────────
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == "/healthz":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"ok")
-        else:
-            self.send_response(404)
-            self.end_headers()
-    def log_message(self, *args): pass  # silence logs
+# ── webhook + health server (aiohttp) ────────────────────────────────────────
+async def _run_webhook_with_health(ptb_app, webhook_url: str, port: int, token: str):
+    from aiohttp import web
 
+    async def healthz(request):
+        return web.Response(text="ok", status=200)
 
-def start_health_server(port: int = 8443):
-    server = HTTPServer(("0.0.0.0", port), HealthHandler)
-    t = threading.Thread(target=server.serve_forever, daemon=True)
-    t.start()
+    async def webhook_handler(request):
+        from telegram import Update as _Update
+        data = await request.json()
+        update = _Update.de_json(data, ptb_app.bot)
+        await ptb_app.update_queue.put(update)
+        return web.Response(text="ok", status=200)
+
+    web_app = web.Application()
+    web_app.router.add_get("/",        healthz)
+    web_app.router.add_get("/healthz", healthz)
+    web_app.router.add_post(f"/{token}", webhook_handler)
+
+    await ptb_app.bot.set_webhook(f"{webhook_url}/{token}")
+
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"ISSE Bot running (webhook + healthz) on port {port}")
+
+    async with ptb_app:
+        await ptb_app.start()
+        await asyncio.Event().wait()   # run forever
+        await ptb_app.stop()
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -376,35 +388,28 @@ def main():
         print("ERROR: Set OPENROUTER_API_KEY env var")
         sys.exit(1)
 
-    app = (
+    ptb_app = (
         ApplicationBuilder()
         .token(TOKEN)
         .build()
     )
 
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("help", cmd_start))
-    app.add_handler(CommandHandler("ciclos", cmd_ciclos))
-    app.add_handler(CommandHandler("buscar", cmd_buscar))
-    app.add_handler(CommandHandler("certificado", cmd_certificado))
-    app.add_handler(CommandHandler("exportar", cmd_exportar))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    ptb_app.add_handler(CommandHandler("start",       cmd_start))
+    ptb_app.add_handler(CommandHandler("help",        cmd_start))
+    ptb_app.add_handler(CommandHandler("ciclos",      cmd_ciclos))
+    ptb_app.add_handler(CommandHandler("buscar",      cmd_buscar))
+    ptb_app.add_handler(CommandHandler("certificado", cmd_certificado))
+    ptb_app.add_handler(CommandHandler("exportar",    cmd_exportar))
+    ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # Webhook mode when WEBHOOK_URL is set (hosted), polling otherwise (local dev)
     webhook_url = os.environ.get("WEBHOOK_URL")
     port = int(os.environ.get("PORT", 10000))
 
     if webhook_url:
-        print(f"ISSE Bot running (webhook) on port {port}...")
-        app.run_webhook(
-            listen="0.0.0.0",
-            port=port,
-            webhook_url=f"{webhook_url}/{TOKEN}",
-            url_path=TOKEN,
-        )
+        asyncio.run(_run_webhook_with_health(ptb_app, webhook_url, port, TOKEN))
     else:
         print("ISSE Bot running (polling)...")
-        app.run_polling()
+        ptb_app.run_polling()
 
 
 if __name__ == "__main__":
